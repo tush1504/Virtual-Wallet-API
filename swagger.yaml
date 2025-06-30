@@ -1,0 +1,724 @@
+openapi: 3.0.4
+info:
+  title: Virtual Wallet API
+  description: It is a virtual wallet API which is made to run basic transaction operations. The main aim is to make a secure wallet which can be used for transfers and payments.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000/api
+    description: Running on local server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+
+paths:
+  /otp/mobile:
+    post:
+      tags:
+        - OTP
+      summary: Send OTP to Indian mobile number
+      description: |
+        Generates a 6-digit OTP and sends it via SMS to the provided Indian mobile number.
+        The OTP is also stored in Redis with a 5-minute expiry for later verification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - mobile
+              properties:
+                mobile:
+                  type: string
+                  description: A valid 10-digit Indian mobile number (starts with 6-9)
+                  example: "9876543210"
+      responses:
+        '200':
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: OTP sent to mobile number
+        '400':
+          description: Invalid mobile number format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid Indian mobile number
+        '500':
+          description: Server error or SMS gateway failure
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Internal server error
+
+
+
+  /otp/verify-mobile:
+    post:
+      tags:
+        - OTP
+      summary: Verify OTP sent to mobile number
+      description: |
+        Verifies the OTP for the given mobile number using the stored Redis key.
+        If the OTP is valid, the entry is deleted from Redis and a short-lived verification flag is set.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - key
+                - otp
+              properties:
+                key:
+                  type: string
+                  description: The mobile number used to receive the OTP
+                  example: "9876543210"
+                otp:
+                  type: string
+                  description: The 6-digit OTP sent to the user
+                  example: "123456"
+      responses:
+        '200':
+          description: OTP verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: OTP verified successfully
+        '400':
+          description: Missing input or invalid OTP
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Invalid OTP
+        '500':
+          description: Server error or Redis failure
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Internal server error
+
+
+  /otp/email:
+    post:
+      tags:
+        - OTP
+      summary: Send OTP to email address
+      description: |
+        Sends a 6-digit OTP to the specified email address using HTML-formatted content.
+        The OTP is stored temporarily in Redis for 5 minutes for verification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Valid email address to receive OTP
+                  example: user@example.com
+      responses:
+        '200':
+          description: OTP sent successfully to email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: OTP sent to email
+        '500':
+          description: Server error (email service or Redis failure)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Internal server error
+
+
+  /otp/verify-email:
+    post:
+      tags:
+        - OTP
+      summary: Verify email OTP and send wallet credentials
+      description: |
+        Verifies the OTP sent to the user's email. If correct:
+        - Marks the user's profile as email verified.
+        - Hashes and sets a new password.
+        - Sends email with login credentials and wallet details.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - otp
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email address used to receive OTP
+                  example: user@example.com
+                otp:
+                  type: string
+                  description: The 6-digit OTP sent to the email
+                  example: "123456"
+      responses:
+        '200':
+          description: OTP verified and credentials sent via email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Email verified successfully. Credentials have been sent to your email.
+        '400':
+          description: Invalid OTP or email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Invalid OTP
+        '404':
+          description: User or profile not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User not found
+        '500':
+          description: Internal server or email error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Internal server error
+
+
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Create a new user account
+      description: |
+        Registers a new user after verifying that the mobile number was previously verified via OTP. 
+        Also creates a wallet and profile entry for the user. Requires that the mobile number was verified using Redis.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - firstName
+                - lastName
+                - email
+                - contact
+                - gender
+                - dob
+              properties:
+                firstName:
+                  type: string
+                  example: John
+                lastName:
+                  type: string
+                  example: Doe
+                email:
+                  type: string
+                  format: email
+                  example: johndoe@example.com
+                contact:
+                  type: string
+                  example: "9876543210"
+                gender:
+                  type: string
+                  enum: [Male, Female, Other]
+                  example: Male
+                dob:
+                  type: string
+                  format: date
+                  example: 1995-07-10
+      responses:
+        '200':
+          description: User created successfully, email verification pending
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User created successfully . Please verify your emailId to Login
+        '400':
+          description: Validation error or mobile number not verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Mobile number not verified
+        '500':
+          description: Internal server error during signup
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Internal server error
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login with email and password
+      description: |
+        Authenticates a user using email and password. Both mobile and email must be verified.
+        Returns a JWT token on successful login. 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: johndoe@example.com
+                password:
+                  type: string
+                  format: password
+                  example: SecurePass123
+      responses:
+        '200':
+          description: Login successful, JWT token returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Invalid credentials
+        '403':
+          description: Email or mobile not verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Please verify email and mobile first
+        '500':
+          description: Internal server error during login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Internal server error
+
+
+  /payments/create-order:
+    post:
+      tags:
+        - Payments
+      summary: Create Razorpay payment order
+      description: |
+        Creates a Razorpay payment order and logs a pending transaction in the database. Requires authentication.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  example: 500
+      responses:
+        '200':
+          description: Razorpay order created and transaction logged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: string
+                    example: order_Ky7wYrMDCjfkxZ
+                  amount:
+                    type: number
+                    example: 500
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /payments/webhook:
+    post:
+      tags:
+        - Payments
+      summary: Razorpay webhook handler
+      description: |
+        Webhook endpoint that verifies Razorpay signature and updates wallet balance upon payment capture.
+        Uses `x-razorpay-signature` header and raw body parsing (`express.raw()` middleware required).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                event: payment.captured
+                payload:
+                  payment:
+                    entity:
+                      order_id: order_Ky7wYrMDCjfkxZ
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  msg:
+                    type: string
+                    example: Money credited successfully
+        '400':
+          description: Invalid Razorpay signature
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Invalid signature
+        '500':
+          description: Internal server error
+
+
+  /wallet/balance:
+    get:
+      summary: Get wallet balance and account number
+      tags:
+        - Wallet
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Wallet balance retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: number
+                    example: 1500
+                  accountNumber:
+                    type: string
+                    example: "ACC1234567890"
+        401:
+          description: Unauthorized – Invalid or missing JWT
+        500:
+          description: Internal server error
+
+  /wallet/transfer:
+    post:
+      summary: Transfer funds internally to another user
+      description: Requires authentication and valid transaction PIN
+      tags:
+        - Wallet
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - contact
+                - amount
+              properties:
+                contact:
+                  type: string
+                  example: "9876543210"
+                amount:
+                  type: number
+                  example: 500
+      responses:
+        200:
+          description: Transfer successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Transfer successful
+                  groupId:
+                    type: string
+                    example: txn_1729924238412_456
+        400:
+          description: Bad request (invalid input, insufficient funds, or self-transfer)
+        401:
+          description: Unauthorized – Invalid or missing JWT
+        403:
+          description: Forbidden – Invalid or missing transaction PIN
+        404:
+          description: User or wallet not found
+        500:
+          description: Internal server error during transfer
+
+  /transactions/history:
+    get:
+      summary: Get filtered and paginated transaction history
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [DEBIT, CREDIT]
+          description: Filter by transaction type
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by transaction status
+        - name: payGateway
+          in: query
+          schema:
+            type: string
+          description: Filter by payment gateway (e.g., razorpay, wallet-internal)
+        - name: referenceId
+          in: query
+          schema:
+            type: string
+          description: Filter by transaction reference ID
+        - name: groupId
+          in: query
+          schema:
+            type: string
+          description: Filter by transaction group ID
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter transactions created after this date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter transactions created before this date
+        - name: minAmount
+          in: query
+          schema:
+            type: number
+          description: Minimum transaction amount
+        - name: maxAmount
+          in: query
+          schema:
+            type: number
+          description: Maximum transaction amount
+        - name: contact
+          in: query
+          schema:
+            type: string
+          description: Filter transactions involving a user with this contact
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+          description: Sort field (e.g., createdOn)
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+          description: Sort order (asc or desc)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        200:
+          description: Paginated and filtered transaction list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    example: 50
+                  page:
+                    type: integer
+                    example: 1
+                  limit:
+                    type: integer
+                    example: 10
+                  totalPages:
+                    type: integer
+                    example: 5
+                  transactions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        referenceId:
+                          type: string
+                          example: txn_1729924238412_456_DEBIT
+                        type:
+                          type: string
+                          example: DEBIT
+                        amount:
+                          type: number
+                          example: 100
+                        status:
+                          type: string
+                          example: success
+                        createdOn:
+                          type: string
+                          format: date-time
+                          example: "2025-06-30T09:00:00.000Z"
+                        sender:
+                          type: object
+                          properties:
+                            firstname:
+                              type: string
+                            lastname:
+                              type: string
+                            contact:
+                              type: string
+                        receiver:
+                          type: object
+                          properties:
+                            firstname:
+                              type: string
+                            lastname:
+                              type: string
+                            contact:
+                              type: string
+        401:
+          description: Unauthorized – Invalid or missing JWT
+        404:
+          description: No user found with provided contact
+        500:
+          description: Failed to fetch transaction history
+
+  /transactions/pdf:
+    get:
+      summary: Export all transactions as PDF
+      tags:
+        - Transactions
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: PDF download of transaction history
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        401:
+          description: Unauthorized – Invalid or missing JWT
+        500:
+          description: Failed to export PDF

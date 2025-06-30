@@ -1,0 +1,604 @@
+{
+	"info": {
+		"_postman_id": "edcbc155-36cb-48dd-add6-dc72b5af6dc7",
+		"name": "Virtual Wallet API",
+		"description": "This Postman collection provides a complete set of endpoints for the **Virtual Wallet API**, a secure, feature-rich digital wallet system built with **Express.js**, **MongoDB**, **Prisma**, **Redis**, and **Razorpay**. It includes:\n\n- **User Authentication with OTP (Email + Mobile)**\n    \n- **Wallet Management**\n    \n- **Peer-to-Peer Transfers (P2P)**\n    \n- **Transaction PIN (like UPI PIN)**\n    \n- **Razorpay Integration for Top-ups**\n    \n- **Webhook Handling & Transaction Verification**\n    \n- **Rate Limiting**\n    \n- **Transaction Filtering & Analytics**\n    \n- **Swagger Docs & Postman Docs Ready**\n    \n\n---\n\n## 🧭 Collection Structure\n\nThe collection is organized by **features/modules** for clarity:\n\n### 🔐 Authentication & OTP\n\n- `POST /otp/molile` – Send OTP to Mobile Number\n    \n- `POST /otp/verify-mobile` – Verify OTP sent to Mobile Number\n    \n- `POST /auth/signup` – Register new users and save them in db\n    \n- `POST /otp/email` – Send OTP to registered email\n    \n- `POST /otp/verify-otp` – Verify OTP sent to Email\n    \n- `POST /auth/login` – Login with email and password\n    \n\n### 💸 Wallet & Transactions\n\n- `POST /wallet/transfer` – Internal wallet-to-wallet transfers (P2P)\n    \n- `GET /wallet/`balance– Get balance and account number\n    \n\n### 💳 Razorpay Integration\n\n- `POST /payments/create-order` – Create a Razorpay order for top-up\n    \n- `POST /payments/webhook` – Verify Razorpay payment via webhook\n    \n- `POST /payments/verify` – Manually verify top-up\n    \n\n### 🧾 Transaction Details\n\n- `GET /transactions/history` – Get complete transaction history using required filters\n    \n- `GET /transactions/`pdf– Export the transaction history in form of pdf\n    \n\n### 🔐 Security\n\n- Transaction PIN required for all sensitive actions (transfer, top-up)\n    \n- OTP stored in **Redis** with auto-expiry\n    \n- All endpoints protected by **JWT authentication** middleware\n    \n\n---\n\n## ✅ How to Use This Collection\n\n1. **Import the collection** into Postman.\n    \n2. Set up the following **Postman Environment Variables**:\n    \n    - `{{URL}}` – API base URL (e.g., [http://localhost:5000](http://localhost:5000) or Ngrok)\n        \n3. Use the **Pre-request Scripts** (where added) to automatically inject headers.\n    \n4. Begin with Authentication and OTP and follow the sequence in which the routes are presented in docs.\n    \n\n---\n\n## 🧪 Testing Notes\n\n- **All endpoints validated using Postman test scripts** (where relevant).\n    \n- **Edge cases** (e.g., expired OTPs, incorrect PINs, insufficient balance) can be tested using specific test data.\n    \n- For **Razorpay webhooks**, use `ngrok / localtunnel` and simulate events via the Razorpay dashboard.\n    \n- If webhooks does not work then test them after deployment and make necessary changes.\n    \n\n---\n\n## 📄 Documentation & Repo\n\n- **Swagger Docs:** `/`\n    \n- **GitHub Repo:** \\[link-to-repo\\]\n    \n- **Tech Stack:** Node.js, Express, MongoDB, Redis, Razorpay, Nodemailer, Fast2SMS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "45879803"
+	},
+	"item": [
+		{
+			"name": "Auth & OTP",
+			"item": [
+				{
+					"name": "Send Mobile OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"mobile\":\"9479230415\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{URL}}/otp/mobile",
+						"description": "## API Request: Send OTP to Mobile\n\n**Method:** POST  \n**Endpoint:** `{{URL}}/otp/mobile`\n\n### Description\n\nThis API allows users to send an OTP (One Time Password) to a specified mobile number. Upon entering a valid mobile number, an OTP will be sent to that number via a voice call.\n\n### Request Parameters\n\n- **mobile** (string): The mobile number to which the OTP will be sent. This parameter is required.\n    \n\n### Request Body Example\n\n``` json\n{\n  \"mobile\": \"9479230415\"\n}\n\n ```\n\n### Expected Response\n\nOn a successful request, the API returns a status code of **200** with the following response format:\n\n``` json\n{\n  \"message\": \"\"\n}\n\n ```\n\n### Related Responses\n\nOther endpoints of this API may return the following data structures:\n\n- { \"balance\": 0, \"accountNumber\": \"\"}\n    \n- { \"message\": \"\", \"groupId\": \"\"}\n    \n- { \"total\": 0, \"page\": 0, \"limit\": 0, \"totalPages\": 0, \"transactions\": \\[ { \"_id\": \"\", \"referenceId\": \"\", \"groupId\": \"\", \"type\": \"\", \"payGateway\": \"\", \"status\": \"\", \"amount\": 0, \"description\": \"\", \"sender\": { \"_id\": \"\", \"contact\": \"\" }, \"receiver\": { \"_id\": \"\", \"contact\": \"\" }, \"user\": \"\", \"createdOn\": \"\", \"__v\": 0 } \\]}  \n    This structure may be returned with a status code of **200** as well."
+					},
+					"response": []
+				},
+				{
+					"name": "Send Email OTP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\":\"tusharsahu227@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{URL}}/otp/email",
+						"description": "## Endpoint: Send OTP to Email\n\nThis endpoint is used to send a One-Time Password (OTP) to the specified email address.\n\nThis API is to be requested after signup process.\n\n### Request\n\n- **Method**: POST\n    \n- **URL**: `{{URL}}/otp/email`\n    \n- **Content-Type**: application/json\n    \n\n#### Request Body\n\nThe request body must be in JSON format and contain the following parameter:\n\n- **email** (string): The email address to which the OTP will be sent. This is a required field.\n    \n\n**Example Request Body**:\n\n``` json\n{\n  \"email\": \"example@example.com\"\n}\n\n ```\n\n### Response\n\nOn a successful request, the server will respond with a 200 status code and a message confirming the action. The response will generally include the following structure:\n\n- **message** (string): A confirmation message regarding the OTP sent status.\n    \n\n**Example Response**:\n\n``` json\n{\n  \"message\": \"OTP sent successfully\"\n}\n\n ```\n\n### Notes\n\n- Ensure that the email provided is valid and accessible by the user, as the OTP will be sent to this address.\n    \n- The structure of the response may vary slightly depending on the context of the request, but it will generally include a message confirming the action taken.\n    \n- This endpoint is part of a broader API that may include functionalities like checking account balance, retrieving transactions, and managing user groups."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Mobile OTP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"key\":\"9479230415\",\r\n    \"otp\":\"940414\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{URL}}/otp/verify-mobile",
+						"description": "## Verify Mobile OTP\n\nThis endpoint is used to verify a One-Time Password (OTP) associated with a mobile number. It is typically called after a user requests an OTP for authentication purposes.\n\n### Request\n\n**Method:** POST  \n**Endpoint:** `{{URL}}/otp/verify-mobile`\n\n#### Request Body\n\nThe request body must be sent in JSON format and should contain the following parameters:\n\n- **key** (string): The mobile number that is being verified.\n    \n- **otp** (string): The One-Time Password that was sent to the mobile number.\n    \n\n**Example Request Body:**\n\n``` json\n{\n  \"key\": \"9479230415\",\n  \"otp\": \"940414\"\n}\n\n ```\n\n### Response\n\nUpon a successful verification, the API will return a response with a 200 status code. The response may vary based on the context of the request but typically includes:\n\n- **message** (string): A confirmation message regarding the OTP verification.\n    \n- Additional responses from related endpoints may include user account details, transaction history, or balance information, depending on the subsequent API calls made.\n    \n\n### Notes\n\n- Ensure that the OTP is valid and has not expired before making this request.\n    \n- This endpoint is crucial for secure operations that require user authentication through mobile verification."
+					},
+					"response": []
+				},
+				{
+					"name": "Signup",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"firstName\": \"John\",\r\n  \"lastName\": \"Doe\",\r\n  \"email\": \"tusharsahu227@gmail.com\",\r\n  \"contact\": \"9479230415\",\r\n  \"gender\": \"male\",\r\n  \"dob\": \"2000-01-01\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{URL}}/auth/signup",
+						"description": "## Signup Endpoint\n\nThis endpoint is used to create a new user account by submitting the user's details.\n\nThe mobile number must be verified before accessing this request.\n\n### Request\n\n**Method:** POST  \n**URL:** `{{URL}}/auth/signup`\n\n#### Request Body\n\nThe request body must be in JSON format and include the following parameters:\n\n- `firstName` (string): The first name of the user.\n    \n- `lastName` (string): The last name of the user.\n    \n- `email` (string): The email address of the user.\n    \n- `contact` (string): The contact number of the user.\n    \n- `gender` (string): The gender of the user.\n    \n- `dob` (string): The date of birth of the user in the format YYYY-MM-DD.\n    \n\n**Example Request Body:**\n\n``` json\n{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"example@example.com\",\n  \"contact\": \"1234567890\",\n  \"gender\": \"male\",\n  \"dob\": \"2000-01-01\"\n}\n\n ```\n\n### Response\n\nThe response will return a JSON object.\n\n#### Possible Responses:\n\n- **Status 200**: Indicates successful account creation. The response will include a message confirming the registration.\n    \n- **Status 400**: Indicates a bad request. The response will include an empty message indicating that the request was not processed successfully.\n    \n\n**Example Response:**\n\n``` json\n{\n  \"message\": \"\"\n}\n\n ```\n\n### Notes\n\n- Ensure that all required fields are filled out correctly to avoid a 400 status response.\n    \n- The structure of the response may vary based on the endpoint being called, but typically includes a message or relevant user information.\n    \n- For successful responses from other related endpoints, you may receive structured data that includes user balances, account numbers, and transaction details."
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\":\"tusharsahu227@gmail.com\",\r\n    \"password\":\"alv18pl0\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{URL}}/auth/login",
+						"description": "### Login Endpoint\n\nThis endpoint is used to authenticate a user by logging them into the system. It requires the user's email and password to be sent in the request body. Upon successful authentication, the server will respond with relevant user data.\n\n#### Request\n\n- **Method**: POST\n    \n- **Endpoint**: `{{URL}}/auth/login`\n    \n- **Request Body**: The request should be sent in JSON format with the following parameters:\n    \n    - `email` (string): The email address of the user attempting to log in.\n        \n    - `password` (string): The password associated with the user's account.\n        \n\n**Example Request Body:**\n\n``` json\n{\n  \"email\": \"user@example.com\",\n  \"password\": \"your_password\"\n}\n\n ```\n\n#### Response\n\nOn a successful login, the server will return a response with a status code of 200. The response structure may vary based on subsequent API calls, but generally includes:\n\n- **Common Response Fields**:\n    \n    - `message` (string): A message indicating the result of the login attempt.\n        \n    - `balance` (number): The current balance of the user's account.\n        \n    - `accountNumber` (string): The user's account number.\n        \n    - `groupId` (string): Identifier for the user's group.\n        \n    - `transactions` (array): A list of transaction objects associated with the user, which includes:\n        \n        - `_id` (string): Unique identifier for the transaction.\n            \n        - `referenceId` (string): Reference ID for the transaction.\n            \n        - `groupId` (string): Group ID associated with the transaction.\n            \n        - `type` (string): Type of transaction.\n            \n        - `payGateway` (string): Payment gateway used.\n            \n        - `status` (string): Current status of the transaction.\n            \n        - `amount` (number): Amount involved in the transaction.\n            \n        - `description` (string): Description of the transaction.\n            \n        - `sender` (object): Details of the sender, including:\n            \n            - `_id` (string): Sender's unique identifier.\n                \n            - `contact` (string): Sender's contact information.\n                \n        - `receiver` (object): Details of the receiver, including:\n            \n            - `_id` (string): Receiver's unique identifier.\n                \n            - `contact` (string): Receiver's contact information.\n                \n        - `user` (string): User associated with the transaction.\n            \n        - `createdOn` (string): Timestamp of when the transaction was created.\n            \n        - `__v` (number): Version key for the transaction.\n            \n\n**Example Response:**\n\n``` json\n{\n  \"message\": \"Login successful\",\n  \"balance\": 100,\n  \"accountNumber\": \"123456789\",\n  \"groupId\": \"group_1\",\n  \"transactions\": [\n    {\n      \"_id\": \"transaction_id\",\n      \"referenceId\": \"ref_id\",\n      \"groupId\": \"group_id\",\n      \"type\": \"credit\",\n      \"payGateway\": \"gateway_name\",\n      \"status\": \"completed\",\n      \"amount\": 50,\n      \"description\": \"Payment for services\",\n      \"sender\": {\n        \"_id\": \"sender_id\",\n        \"contact\": \"sender@example.com\"\n      },\n      \"receiver\": {\n        \"_id\": \"receiver_id\",\n        \"contact\": \"receiver@example.com\"\n      },\n      \"user\": \"user_id\",\n      \"createdOn\": \"2023-01-01T00:00:00Z\",\n      \"__v\": 0\n    }\n  ]\n}\n\n ```"
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Email OTP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\":\"tusharsahu227@gmail.com\",\r\n    \"otp\":\"935926\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{URL}}/otp/verify-email",
+						"description": "### Verify Email OTP\n\nThis endpoint is used to verify the One-Time Password (OTP) sent to a user's email address. It is essential for confirming the user's identity during the registration or login process.\n\nOn successful verification , the lodin and wallet details of the user will be sent to the registered email.\n\n#### Request\n\n**Method:** POST  \n**Endpoint:** `{{URL}}/otp/verify-email`\n\n**Request Body:**  \nThe request body must be in JSON format and include the following parameters:\n\n- `email` (string): The email address of the user for whom the OTP is being verified.\n    \n- `otp` (string): The One-Time Password sent to the user's email.\n    \n\n**Example Request Body:**\n\n``` json\n{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\"\n}\n\n ```\n\n#### Response\n\nUpon a successful OTP verification, the API will return a response with a 200 status code. The response structure may vary based on the context of the request but generally includes:\n\n- `message` (string): A message indicating the success or failure of the OTP verification process.\n    \n- Additional related data may include user account details or transaction information, depending on the context of the request.\n    \n\n**Example Response:**\n\n``` json\n{\n  \"message\": \"OTP verified successfully.\"\n}\n\n ```\n\n#### Notes\n\n- Ensure that the email provided matches the email to which the OTP was sent.\n    \n- The OTP is time-sensitive; it may expire if not used within a specific timeframe.\n    \n- Users should handle responses appropriately to guide them through the verification process."
+					},
+					"response": []
+				}
+			],
+			"description": "This folder cintains all the routes that is required for successful registration and login into the program."
+		},
+		{
+			"name": "Wallet",
+			"item": [
+				{
+					"name": "Balance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWY4NTQxMDMxNTkyNzE5MmZmNjc0ZCIsImlhdCI6MTc1MTEwMDg1NywiZXhwIjoxNzUxNzA1NjU3fQ.VGfn8uYA9QUOY6Iv2lSG0sTzp1BOinTlqlOgCWvDXLM",
+								"type": "text"
+							}
+						],
+						"url": "{{URL}}/wallet/balance",
+						"description": "## Get Wallet Balance\n\nThis endpoint retrieves the current balance of the user's wallet associated with their account.\n\n### Request\n\n- **Method**: GET\n    \n- **Endpoint**: `{{URL}}/wallet/balance`\n    \n\n### Response\n\nOn a successful request, the API returns a JSON object with the following structure:\n\n``` json\n{\n  \"balance\": 0,\n  \"accountNumber\": \"\"\n}\n\n ```\n\n#### Response Fields:\n\n- **balance** (integer): The current balance in the user's wallet. This value may be zero or a positive integer.\n    \n- **accountNumber** (string): The account number associated with the wallet. This may be an empty string if not applicable.\n    \n\n### Notes\n\n- A successful request will return a `200 OK` status code.\n    \n- The response structure is consistent with other related endpoints in the API, which may return messages or transaction details.\n    \n- Ensure that the user is authenticated and authorized to access their wallet balance before making this request."
+					},
+					"response": [
+						{
+							"name": "Balance",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWY4NTQxMDMxNTkyNzE5MmZmNjc0ZCIsImlhdCI6MTc1MTEwMDg1NywiZXhwIjoxNzUxNzA1NjU3fQ.VGfn8uYA9QUOY6Iv2lSG0sTzp1BOinTlqlOgCWvDXLM",
+										"type": "text"
+									}
+								],
+								"url": "{{URL}}/wallet/balance"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Security-Policy",
+									"value": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests"
+								},
+								{
+									"key": "Cross-Origin-Opener-Policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "Cross-Origin-Resource-Policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "Origin-Agent-Cluster",
+									"value": "?1"
+								},
+								{
+									"key": "Referrer-Policy",
+									"value": "no-referrer"
+								},
+								{
+									"key": "Strict-Transport-Security",
+									"value": "max-age=31536000; includeSubDomains"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-DNS-Prefetch-Control",
+									"value": "off"
+								},
+								{
+									"key": "X-Download-Options",
+									"value": "noopen"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "SAMEORIGIN"
+								},
+								{
+									"key": "X-Permitted-Cross-Domain-Policies",
+									"value": "none"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "47"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"2f-CWErMmGI24cBdlPFcnWKUarCtkc\""
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 29 Jun 2025 05:52:50 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"balance\": 61002,\n    \"accountNumber\": \"10460126522\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Internal Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWY4NTQxMDMxNTkyNzE5MmZmNjc0ZCIsImlhdCI6MTc1MTEwMDg1NywiZXhwIjoxNzUxNzA1NjU3fQ.VGfn8uYA9QUOY6Iv2lSG0sTzp1BOinTlqlOgCWvDXLM",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"contact\":\"6265906318\",\r\n    \"amount\":1,\r\n    \"pin\":\"1369\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{URL}}/wallet/transfer",
+						"description": "### Wallet Transfer API\n\nThis endpoint allows users to transfer funds from their wallet to a specified contact. The transfer is initiated by sending a POST request to the `/wallet/transfer` endpoint with the necessary details in the request body.\n\n#### Request Format\n\nThe request body must be in JSON format and should include the following parameters:\n\n- **contact** (string): The contact number of the recipient to whom the funds will be transferred.\n    \n- **amount** (number): The amount of money to be transferred.\n    \n- **pin** (string): The PIN code required to authorize the transfer.\n    \n\n**Example Request Body:**\n\n``` json\n{\n  \"contact\": \"6265906318\",\n  \"amount\": 1,\n  \"pin\": \"1369\"\n}\n\n ```\n\n#### Response Structure\n\nUpon a successful transfer, the API will respond with a status code of `200` and a JSON object containing the following fields:\n\n- **message** (string): A message indicating the result of the transfer operation (may be empty).\n    \n- **groupId** (string): An identifier for the group associated with the transfer (may be empty).\n    \n\n**Example Response:**\n\n``` json\n{\n  \"message\": \"\",\n  \"groupId\": \"\"\n}\n\n ```\n\n### Related Responses\n\nOther endpoints in the API may return similar structures, including messages and account details. For instance:\n\n- A response indicating the current balance or account number.\n    \n- A response detailing transaction history, including transaction IDs, amounts, and statuses.\n    \n\nThis consistency in response structure helps in maintaining a uniform interaction pattern across the API."
+					},
+					"response": [
+						{
+							"name": "Internal Transfer",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWY4NTQxMDMxNTkyNzE5MmZmNjc0ZCIsImlhdCI6MTc1MTEwMDg1NywiZXhwIjoxNzUxNzA1NjU3fQ.VGfn8uYA9QUOY6Iv2lSG0sTzp1BOinTlqlOgCWvDXLM",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"contact\":\"6265906318\",\r\n    \"amount\":1,\r\n    \"pin\":\"1369\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": "{{URL}}/wallet/transfer"
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Security-Policy",
+									"value": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests"
+								},
+								{
+									"key": "Cross-Origin-Opener-Policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "Cross-Origin-Resource-Policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "Origin-Agent-Cluster",
+									"value": "?1"
+								},
+								{
+									"key": "Referrer-Policy",
+									"value": "no-referrer"
+								},
+								{
+									"key": "Strict-Transport-Security",
+									"value": "max-age=31536000; includeSubDomains"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-DNS-Prefetch-Control",
+									"value": "off"
+								},
+								{
+									"key": "X-Download-Options",
+									"value": "noopen"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "SAMEORIGIN"
+								},
+								{
+									"key": "X-Permitted-Cross-Domain-Policies",
+									"value": "none"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "67"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"43-7HTvxFAuTZfQvB6OkLNfdMCG4gE\""
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 29 Jun 2025 05:55:23 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Transfer successful\",\n    \"groupId\": \"txn_1751176523563_268\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "Create Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWY4NTQxMDMxNTkyNzE5MmZmNjc0ZCIsImlhdCI6MTc1MTEwMDg1NywiZXhwIjoxNzUxNzA1NjU3fQ.VGfn8uYA9QUOY6Iv2lSG0sTzp1BOinTlqlOgCWvDXLM",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"amount\": 1\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{URL}}/payments/create-order",
+						"description": "## Create Order Payment\n\nThis endpoint allows you to create a new payment order.\n\n### HTTP Method\n\n`POST`\n\n### Endpoint\n\n`{{URL}}/payments/create-order`\n\n### Request Body\n\nThe request body must be in JSON format and include the following parameter:\n\n- **amount** (integer, required): The amount of money to be processed for the payment order.\n    \n\n#### Example Request\n\n``` json\n{\n  \"amount\": 1\n}\n\n ```\n\n### Expected Response\n\nUpon a successful request, the API will return a response with a `200` status code. The response format may vary depending on the context of the request, but generally, it will contain a message or relevant data. Below are examples of possible responses:\n\n- { \"message\": \"\"}\n    \n- { \"balance\": 0, \"accountNumber\": \"\"}\n    \n- { \"message\": \"\", \"groupId\": \"\"}\n    \n- { \"total\": 0, \"page\": 0, \"limit\": 0, \"totalPages\": 0, \"transactions\": \\[ { \"_id\": \"\", \"referenceId\": \"\", \"groupId\": \"\", \"type\": \"\", \"payGateway\": \"\", \"status\": \"\", \"amount\": 0, \"description\": \"\", \"sender\": { \"_id\": \"\", \"contact\": \"\" }, \"receiver\": { \"_id\": \"\", \"contact\": \"\" }, \"user\": \"\", \"createdOn\": \"\", \"__v\": 0 } \\]}\n    \n\n### Notes\n\nEnsure that the `amount` parameter is provided in the request body to successfully create the order. The response will provide relevant information based on the operation performed."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Order Manually",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWY4NTQxMDMxNTkyNzE5MmZmNjc0ZCIsImlhdCI6MTc1MTEwMDg1NywiZXhwIjoxNzUxNzA1NjU3fQ.VGfn8uYA9QUOY6Iv2lSG0sTzp1BOinTlqlOgCWvDXLM",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n     \"orderId\": \"order_QmZGYyWjHw2wTL\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{URL}}/payments/verify",
+						"description": "## Verify Payment\n\nThis endpoint is used to verify a payment associated with a specific order. By sending a POST request to `{{URL}}/payments/verify` with the required parameters, you can confirm the status of a payment linked to an order ID.\n\n### Request Parameters\n\n- **orderId** (string): The unique identifier for the order you wish to verify. This parameter is essential for the verification process.\n    \n\n### Request Example\n\n``` json\n{\n  \"orderId\": \"order_QmZGYyWjHw2wTL\"\n}\n\n ```\n\n### Expected Response\n\nUpon successful verification, the server will respond with a 200 status code. The response may vary based on the outcome of the verification process, but generally, it will include:\n\n- **message** (string): A message indicating the result of the verification.\n    \n- **balance** (number): The current balance associated with the account.\n    \n- **accountNumber** (string): The account number related to the payment.\n    \n- **groupId** (string): An identifier for the group associated with the transaction.\n    \n- **transactions** (array): A list of transactions related to the payment, each containing details such as:\n    \n    - **_id** (string): The unique identifier for the transaction.\n        \n    - **referenceId** (string): A reference ID for tracking.\n        \n    - **type** (string): The type of transaction.\n        \n    - **payGateway** (string): The payment gateway used.\n        \n    - **status** (string): The current status of the transaction.\n        \n    - **amount** (number): The amount involved in the transaction.\n        \n    - **description** (string): A description of the transaction.\n        \n    - **sender** (object): Information about the sender, including their ID and contact information.\n        \n    - **receiver** (object): Information about the receiver, including their ID and contact information.\n        \n    - **createdOn** (string): The timestamp when the transaction was created.\n        \n    - **__v** (number): Version key for the transaction document.\n        \n\n### Notes\n\n- Ensure that the `orderId` is valid and corresponds to an existing order in the system.\n    \n- The response structure may vary slightly depending on the specific context of the verification.\n    \n- Always check the `message` field for additional information regarding the verification process."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Transactions",
+			"item": [
+				{
+					"name": "History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWY4NTQxMDMxNTkyNzE5MmZmNjc0ZCIsImlhdCI6MTc1MTEwMDg1NywiZXhwIjoxNzUxNzA1NjU3fQ.VGfn8uYA9QUOY6Iv2lSG0sTzp1BOinTlqlOgCWvDXLM",
+								"type": "text"
+							}
+						],
+						"url": "{{URL}}/transactions/history",
+						"description": "## Endpoint: Retrieve Transaction History\n\nThis endpoint allows users to retrieve the history of transactions associated with their account. It returns a paginated list of transactions, including details such as transaction IDs, amounts, statuses, and timestamps.\n\nWe can use different Key-Values in the parametere section to get the transaction history as per our required filters.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{URL}}/transactions/history`\n    \n\n### Response\n\nThe response will return a JSON object with the following structure:\n\n``` json\n{\n  \"total\": <number>,          // Total number of transactions\n  \"page\": <number>,           // Current page number\n  \"limit\": <number>,          // Number of transactions per page\n  \"totalPages\": <number>,     // Total number of pages available\n  \"transactions\": [           // Array of transaction objects\n    {\n      \"_id\": \"<string>\",      // Unique identifier for the transaction\n      \"referenceId\": \"<string>\", // Reference ID for the transaction\n      \"groupId\": \"<string>\",   // Group ID associated with the transaction\n      \"type\": \"<string>\",      // Type of transaction (e.g., credit, debit)\n      \"payGateway\": \"<string>\", // Payment gateway used for the transaction\n      \"status\": \"<string>\",    // Current status of the transaction\n      \"amount\": <number>,      // Amount involved in the transaction\n      \"description\": \"<string>\", // Description of the transaction\n      \"sender\": {              // Sender details\n        \"_id\": \"<string>\",      // Sender&#x27;s unique identifier\n        \"contact\": \"<string>\"    // Sender&#x27;s contact information\n      },\n      \"receiver\": {            // Receiver details\n        \"_id\": \"<string>\",      // Receiver&#x27;s unique identifier\n        \"contact\": \"<string>\"    // Receiver&#x27;s contact information\n      },\n      \"user\": \"<string>\",       // User associated with the transaction\n      \"createdOn\": \"<string>\",  // Timestamp of when the transaction was created\n      \"__v\": <number>          // Version key for the transaction\n    }\n  ]\n}\n\n ```\n\n### Notes\n\n- The `total`, `page`, `limit`, and `totalPages` fields provide pagination information.\n    \n- The `transactions` array will contain transaction objects, each with detailed information.\n    \n- If there are no transactions, the `transactions` array will be empty, and `total` will be `0`.\n    \n- Ensure to handle the pagination parameters appropriately if you are implementing this in your application.\n    \n\n### Example Response\n\nA typical response might look like this:\n\n``` json\n{\n  \"total\": 0,\n  \"page\": 0,\n  \"limit\": 0,\n  \"totalPages\": 0,\n  \"transactions\": []\n}\n\n ```\n\nThis indicates that there are currently no transactions available for the user."
+					},
+					"response": [
+						{
+							"name": "History",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWY4NTQxMDMxNTkyNzE5MmZmNjc0ZCIsImlhdCI6MTc1MTEwMDg1NywiZXhwIjoxNzUxNzA1NjU3fQ.VGfn8uYA9QUOY6Iv2lSG0sTzp1BOinTlqlOgCWvDXLM",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{URL}}/transactions/history?type=CREDIT&status=success",
+									"host": [
+										"{{URL}}"
+									],
+									"path": [
+										"transactions",
+										"history"
+									],
+									"query": [
+										{
+											"key": "type",
+											"value": "CREDIT"
+										},
+										{
+											"key": "status",
+											"value": "success"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Security-Policy",
+									"value": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests"
+								},
+								{
+									"key": "Cross-Origin-Opener-Policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "Cross-Origin-Resource-Policy",
+									"value": "same-origin"
+								},
+								{
+									"key": "Origin-Agent-Cluster",
+									"value": "?1"
+								},
+								{
+									"key": "Referrer-Policy",
+									"value": "no-referrer"
+								},
+								{
+									"key": "Strict-Transport-Security",
+									"value": "max-age=31536000; includeSubDomains"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-DNS-Prefetch-Control",
+									"value": "off"
+								},
+								{
+									"key": "X-Download-Options",
+									"value": "noopen"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "SAMEORIGIN"
+								},
+								{
+									"key": "X-Permitted-Cross-Domain-Policies",
+									"value": "none"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1867"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"74b-29E7+ollbI/oPq35UbcWq2Pf+CU\""
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 29 Jun 2025 05:56:28 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"total\": 5,\n    \"page\": 1,\n    \"limit\": 10,\n    \"totalPages\": 1,\n    \"transactions\": [\n        {\n            \"_id\": \"6860d4e2cd5dd6f7f2613dfe\",\n            \"referenceId\": \"txn_1751176418760_964_CREDIT\",\n            \"groupId\": \"txn_1751176418760_964\",\n            \"type\": \"CREDIT\",\n            \"payGateway\": \"wallet-internal\",\n            \"status\": \"success\",\n            \"amount\": 1,\n            \"description\": \"Received from 6265906318\",\n            \"sender\": {\n                \"_id\": \"685d0ce6cadb87dec9892e24\",\n                \"contact\": \"6265906318\"\n            },\n            \"receiver\": {\n                \"_id\": \"685f85410315927192ff674d\",\n                \"contact\": \"9479230415\"\n            },\n            \"user\": \"685f85410315927192ff674d\",\n            \"createdOn\": \"2025-06-29T05:53:38.764Z\",\n            \"__v\": 0\n        },\n        {\n            \"_id\": \"685fb6c43177b053063abe3c\",\n            \"referenceId\": \"order_QmZGYyWjHw2wTL\",\n            \"type\": \"CREDIT\",\n            \"payGateway\": \"razorpay\",\n            \"status\": \"success\",\n            \"amount\": 1,\n            \"user\": \"685f85410315927192ff674d\",\n            \"createdOn\": \"2025-06-28T09:32:52.664Z\",\n            \"__v\": 0\n        },\n        {\n            \"_id\": \"685faf4607f45fc62e4c39ff\",\n            \"referenceId\": \"order_QmYinKmV3QdFND\",\n            \"type\": \"CREDIT\",\n            \"payGateway\": \"razorpay\",\n            \"status\": \"success\",\n            \"amount\": 1001,\n            \"user\": \"685f85410315927192ff674d\",\n            \"createdOn\": \"2025-06-28T09:00:54.386Z\",\n            \"__v\": 0\n        },\n        {\n            \"_id\": \"685fad8907f45fc62e4c39f9\",\n            \"referenceId\": \"txn_1751100809789_431_CREDIT\",\n            \"groupId\": \"txn_1751100809789_431\",\n            \"type\": \"CREDIT\",\n            \"payGateway\": \"wallet-internal\",\n            \"status\": \"success\",\n            \"amount\": 40000,\n            \"description\": \"Received from 6265906318\",\n            \"sender\": {\n                \"_id\": \"685d0ce6cadb87dec9892e24\",\n                \"contact\": \"6265906318\"\n            },\n            \"receiver\": {\n                \"_id\": \"685f85410315927192ff674d\",\n                \"contact\": \"9479230415\"\n            },\n            \"user\": \"685f85410315927192ff674d\",\n            \"createdOn\": \"2025-06-28T08:53:29.790Z\",\n            \"__v\": 0\n        },\n        {\n            \"_id\": \"685f8abd0315927192ff6761\",\n            \"referenceId\": \"txn_1751091901575_174_CREDIT\",\n            \"groupId\": \"txn_1751091901575_174\",\n            \"type\": \"CREDIT\",\n            \"payGateway\": \"wallet-internal\",\n            \"status\": \"success\",\n            \"amount\": 20000,\n            \"description\": \"Received from 6265906318\",\n            \"sender\": {\n                \"_id\": \"685d0ce6cadb87dec9892e24\",\n                \"contact\": \"6265906318\"\n            },\n            \"receiver\": {\n                \"_id\": \"685f85410315927192ff674d\",\n                \"contact\": \"9479230415\"\n            },\n            \"user\": \"685f85410315927192ff674d\",\n            \"createdOn\": \"2025-06-28T06:25:01.583Z\",\n            \"__v\": 0\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NWY4NTQxMDMxNTkyNzE5MmZmNjc0ZCIsImlhdCI6MTc1MTEwMDg1NywiZXhwIjoxNzUxNzA1NjU3fQ.VGfn8uYA9QUOY6Iv2lSG0sTzp1BOinTlqlOgCWvDXLM",
+								"type": "text"
+							}
+						],
+						"url": "{{URL}}/transactions/pdf",
+						"description": "## API Endpoint: Get Transaction PDF\n\n### Method\n\n`GET`\n\n### Endpoint\n\n`{{URL}}/transactions/pdf`\n\n### Description\n\nThis endpoint retrieves a PDF document containing transaction details. It is designed to provide users with a downloadable format of their transaction history.\n\n### Request Parameters\n\nThere are no specific request parameters required for this endpoint.\n\n### Expected Response\n\nOn a successful request, the server responds with a `200 OK` status and the content type will be `application/pdf`. The response will not contain a JSON body, as the output is a PDF file.\n\n### Related Responses\n\nThe following are examples of responses from other related endpoints that share similar data models:\n\n- {\"message\":\"\"}\n    \n- {\"balance\":0,\"accountNumber\":\"\"}\n    \n- {\"message\":\"\",\"groupId\":\"\"}\n    \n- { \"total\":0, \"page\":0, \"limit\":0, \"totalPages\":0, \"transactions\":\\[ { \"_id\":\"\", \"referenceId\":\"\", \"groupId\":\"\", \"type\":\"\", \"payGateway\":\"\", \"status\":\"\", \"amount\":0, \"description\":\"\", \"sender\":{\"_id\":\"\",\"contact\":\"\"}, \"receiver\":{\"_id\":\"\",\"contact\":\"\"}, \"user\":\"\", \"createdOn\":\"\", \"__v\":0 } \\]}\n    \n\n### Notes\n\n- Ensure that the endpoint is accessed with proper authentication if required.\n    \n- The PDF document will contain the formatted transaction details as per the user's account history."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
