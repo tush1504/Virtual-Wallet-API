@@ -1,4 +1,4 @@
-#Virtual Wallet API
+# Virtual Wallet API
 
 A secure, production-ready virtual wallet backend built with Node.js, Express, MongoDB, and Redis. Think of it like a simplified version of your favorite mobile payment apps — users can sign up, verify their identity, manage wallets, transfer money, and even top up using Razorpay. Everything is structured for scalability and security, with a clean codebase and solid error handling.
 
