@@ -42,6 +42,10 @@ const otpLimiter = rateLimit({
 });
 app.use('/api/otp', otpLimiter);
 
+// health for render
+app.get("/healthz" , (req,res) =>{
+  res.status(200).send("OK")
+})
 
 // controllers
 app.use('/api/auth', authRoutes);

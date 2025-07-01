@@ -33,38 +33,82 @@ exports.createOrder = async (req,res,next)=>{
   }catch(err){ next(err); }
 };
 
+exports.createPaymentLink = async(req,res,next) => {
+  try {
+     
+     const {orderId} = req.body;
+
+     if(!orderId) return res.status(400).json({ message:'Order ID is required' });
+
+     const txn = await Transaction.findOne({referenceId:orderId});
+
+     if(!txn) return res.status(404).json({ message:'Transaction not found' });
+
+     const amount = txn.amount;
+
+     const paymentLink = await razorpay.paymentLink.create({
+      amount: amount * 100,
+      currency: "INR",
+      description: "Wallet Top-up",
+      notes: {
+        transactionId: txn._id.toString(),
+        userId: txn.user.toString()
+      }
+    });
+
+    res.status(200).json({
+      msg:"Payment Link Created",
+      paymentLink:paymentLink.short_url
+    })
 
 
-exports.webhook = async (req,res,next)=>{
-
-  const signature = req.headers['x-razorpay-signature']; //all webhook are signed with a secret key . this header contains it
-
-  const isValid = verifySig(req.rawBody, signature); //this verfies that webhook is really from rpay
-
-  if(!isValid) return res.status(400).json({ message:'Invalid signature' });
-
-  const payload = JSON.parse(req.rawBody);
+  } catch (error) {
+    next(error);
+  } 
+}
 
 
-  if(payload.event === 'payment.captured'){
+exports.webhook = async (req, res, next) => {
+  try {
+    const signature = req.headers['x-razorpay-signature'];
 
-    const orderId = payload.payload.payment.entity.order_id; //extract the user id
+    const isValid = verifySig(req.rawBody, signature);
+    if (!isValid) return res.status(400).json({ message: 'Invalid signature' });
 
-    const txn = await Transaction.findOne({ referenceId: orderId }); //lokk for the pending transaction
+    const payload = JSON.parse(req.rawBody);
 
-    if(txn && txn.status==='pending'){
+    if (payload.event === 'payment.captured') {
 
-      txn.status = 'success'; //mark the transaction as success
-      await txn.save(); //save the transaction
-      // await sendEmail(txn.user.email, 'Wallet Deposit Successful', `₹${txn.amount} added to your wallet.`); 
+      const paymentEntity = payload.payload.payment.entity;
 
-      await Wallet.updateOne({ user: txn.user }, { $inc:{ balance: txn.amount } }); //update the wallet balance
+      const transactionId = paymentEntity.notes?.transactionId;
+      if (!transactionId) {
+        return res.status(400).json({ message: 'Missing transaction reference' });
+      }
 
+      const txn = await Transaction.findById(transactionId).populate('user', 'email');
+
+      if (!txn) {
+        return res.status(404).json({ message: 'Transaction not found' });
+      }
+
+      if (txn.status === 'pending') {
+        txn.status = 'success';
+        await txn.save();
+        await Wallet.updateOne({ user: txn.user }, { $inc: { balance: txn.amount } });
+        
+        if (txn.user?.email) {
+          await sendEmail(txn.user.email, 'Wallet Deposit Successful', `₹${txn.amount} added to your wallet.`);
+        } else {
+          console.warn("Email not sent: user email is missing");
+        }
+        
+      }
     }
+
+    res.json({ status: 'ok', msg: 'Money credited successfully' });
+
+  } catch (err) {
+    next(err);
   }
-  console.log("Webhook received and processed successfully");
-  res.json({ status: 'ok' , msg:"Money credited successfully" });
 };
-
-
-

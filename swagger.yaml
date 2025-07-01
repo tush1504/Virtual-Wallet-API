@@ -434,43 +434,44 @@ paths:
           description: Bad request
         '500':
           description: Internal server error
+          
 
-  /payments/webhook:
+  /payments/create-link:
     post:
+      summary: Create Razorpay Payment Link
+      description: Creates a Razorpay payment link using an existing order ID. Useful when no frontend is available.
       tags:
         - Payments
-      summary: Razorpay webhook handler
-      description: |
-        Webhook endpoint that verifies Razorpay signature and updates wallet balance upon payment capture.
-        Uses `x-razorpay-signature` header and raw body parsing (`express.raw()` middleware required).
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              example:
-                event: payment.captured
-                payload:
-                  payment:
-                    entity:
-                      order_id: order_Ky7wYrMDCjfkxZ
+              properties:
+                orderId:
+                  type: string
+                  example: order_LxYd12345XYZ
+                  description: The Razorpay order ID created previously.
       responses:
         '200':
-          description: Webhook processed successfully
+          description: Payment link created successfully.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: ok
                   msg:
                     type: string
-                    example: Money credited successfully
+                    example: Payment Link Created
+                  paymentLink:
+                    type: string
+                    format: uri
+                    example: https://rzp.io/l/SamplePaymentLink123
         '400':
-          description: Invalid Razorpay signature
+          description: Order ID is missing
           content:
             application/json:
               schema:
@@ -478,7 +479,17 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: Invalid signature
+                    example: Order ID is required
+        '404':
+          description: Transaction not found for the given order ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Transaction not found
         '500':
           description: Internal server error
 
