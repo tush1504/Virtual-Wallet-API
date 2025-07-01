@@ -6,8 +6,10 @@ A secure, production-ready virtual wallet backend built with Node.js, Express, M
 
 ## API Documentation
 
-  -To access the public documentation of the Virtual Wallet API , you can visit the [Postman Documentation](https://documenter.getpostman.com/view/45879803/2sB34ZqPYw)
-  -Interactive docs available via Swagger UI (on /api-docs)
+- You can explore and test all the API endpoints in two ways:
+  - Open the Swagger UI in your browser for an interactive experience.
+  - Or check out the full collection on Postman here: [View Postman Docs](https://documenter.getpostman.com/view/45879803/2sB34ZqPYw)
+
 ---
 
 ## Key Features
