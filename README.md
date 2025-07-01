@@ -1,42 +1,44 @@
-# 💸 Virtual Wallet API
+#Virtual Wallet API
 
-A secure, production-grade Virtual Wallet API built with Node.js, Express.js, MongoDB, and Redis. It features robust OTP-based authentication, UPI-style transaction PIN verification, real-time wallet-to-wallet transfers, Razorpay integration for wallet top-ups, and a modular, scalable backend architecture with comprehensive error handling.
-
----
-
-## 🚀 Postman Documentation
-
-To access the public documentation of the Virtual Wallet API , you can visit my [Postman Documentation](https://documenter.getpostman.com/view/45879803/2sB34ZqPYw)
-  
----
-
-## 🚀 Features
-
-- 🔐 **OTP-Based Authentication**
-  - Email (Nodemailer + Redis) and Mobile (2Factor + Redis) verification
-  - Separate OTPs for login, signup, and password/PIN reset
-- 🧾 **Automatic Wallet Creation**
-  - Users get a new Wallet and Profile on signup
-  - Secure password and PIN generation + email delivery of credentials
-- 🔁 **Wallet-to-Wallet Transfers**
-  - Real-time internal transfers with balance checks
-  - Atomic MongoDB transactions using sessions
-  - PIN verification (UPI-style) for transaction authorization
-- 💳 **Razorpay Payments**
-  - Seamless wallet top-up flow using Razorpay Orders API
-  - Webhook-based wallet crediting with HMAC verification
-- 📊 **Transaction Logs & History**
-  - Filterable transaction data by date, type, or amount
-  - Full transaction trail for each user
-- 🔄 **Rollback-Safe Operations**
-  - Graceful error handling with session.abortTransaction()
-- 📦 **Scalable Architecture**
-  - Clean controller-route separation
-  - Environment-based config, middleware for auth, error, and PIN checks
+A secure, production-ready virtual wallet backend built with Node.js, Express, MongoDB, and Redis. Think of it like a simplified version of your favorite mobile payment apps — users can sign up, verify their identity, manage wallets, transfer money, and even top up using Razorpay. Everything is structured for scalability and security, with a clean codebase and solid error handling.
 
 ---
 
-## 🧱 Tech Stack
+## API Documentation
+
+  -To access the public documentation of the Virtual Wallet API , you can visit the [Postman Documentation](https://documenter.getpostman.com/view/45879803/2sB34ZqPYw)
+  -Interactive docs available via Swagger UI (on /api-docs)
+---
+
+## Key Features
+
+- OTP-Based Authentication
+  -Verifies users via email (Nodemailer) and mobile (Fast2SMS / 2Factor)
+  -OTPs are securely stored in Redis with expiry
+  -Different OTP flows for signup, login, and password/PIN reset
+
+- Automatic Wallet Setup
+  -Every new user automatically gets a Wallet and Profile
+  -Securely generates and sends password + PIN via email
+
+- Wallet-to-Wallet Transfers
+  -Real-time internal transfers with PIN verification (like UPI)
+  -Balance checks and rollback-safe with MongoDB transaction sessions
+
+- Add Money via Razorpay
+  -Users can top-up wallets using Razorpay
+  -Uses Razorpay’s Orders API and webhook verification to confirm success
+
+- View Transaction History
+  -Full logs for each transaction
+  -Supports filtering by date, type, and amount
+
+- Bulletproof Operations
+  -Strong input validation + graceful error handling
+  -Sessions auto-abort on failure — no broken balances or ghost entries
+---
+
+## Tech Stack
 
 | Layer         | Tools/Frameworks |
 |---------------|------------------|
@@ -49,7 +51,7 @@ To access the public documentation of the Virtual Wallet API , you can visit my 
 
 ---
 
-## 🗂 Folder Structure
+## Folder Structure
     ├── server.js
     ├── config/
     │ ├── db.js
@@ -102,84 +104,63 @@ To access the public documentation of the Virtual Wallet API , you can visit my 
 
 ---
 
-## 🌐 Environment Variables
+## Environment Variables
    - Create a `.env` file in the root directory and add the following:
      ```env
-      # MongoDB connection string
-      MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/yourdbname?retryWrites=true&w=majority
+     MONGO_URI=your_mongodb_uri
+     JWT_SECRET=your_jwt_secret
+     RAZORPAY_API_KEY=your_key
+     RAZORPAY_KEY_SECRET=your_secret
+     RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
+     REDIS_URL=redis://default:password@host:port
+     EMAIL_USER=youremail@example.com
+     EMAIL_PASS=your_email_password
+     TWOFACTOR_API_KEY=your_sms_api_key
+     PORT=3000
 
-      # JWT secret for authentication
-      JWT_SECRET=your_jwt_secret
-
-      # Razorpay API keys
-      RAZORPAY_API_KEY=your_razorpay_api_key
-      RAZORPAY_KEY_SECRET=your_razorpay_secret_key
-
-      # Razorpay Webhook secret (from Razorpay dashboard)
-      RAZORPAY_WEBHOOK_SECRET=secret_for_webhook_verification
-
-      # Redis URL (for OTP or rate limiting, etc.)
-      REDIS_URL=redis://default:<password>@<host>:<port>
-
-      # Email service credentials (e.g., Gmail or SMTP provider)
-      EMAIL_USER=your_email@example.com
-      EMAIL_PASS=your_email_password_or_app_password
-
-      # TwoFactor / Fast2SMS API key for mobile OTP
-      TWOFACTOR_API_KEY=api_key_for_otp
-
-      # Port for running the server
-      PORT=3000
 
      ```
 
 ---
 
-## 📑 API Documentation
 
-- 📬 **Postman Collection** 
-- 🔎 **Swagger UI** 
+## Security Highlights
+
+- All passwords and PINs are hashed using bcrypt
+- OTPs expire and auto-delete from Redis
+- Input is sanitized and validated
+- All sensitive routes are JWT-protected
+- Critical flows (like transfers) use MongoDB atomic transactions
+
+---
+
+## Testing
+
+- Manual testing via Postman and Swagger UI
+- Auth flow + OTP expiration edge cases
+- Razorpay webhook testing with test credit card & secret
 
 
 ---
 
-## 🛡 Security Highlights
-
-- 🔐 Hashed passwords and PINs (bcrypt)
-- 🧠 OTP expiry + Redis eviction handling
-- 🚨 Rate limiting and input validation
-- 🛑 Protected routes using JWT
-- ✅ Atomic operations for critical flows
-
----
-
-## 🧪 Testing
-
-- ✅ Manual testing via Postman and Swagger UI
-- ✅ Auth flow + OTP expiration edge cases
-- ✅ Razorpay webhook testing with test credit card & secret
-
-
----
-
-## ✨ Future Enhancements
+## Future Enhancements
 
 -  Add Change Password & Change PIN feature
 -  Wallet to QR Payment
--  Scheduled/Recurring Payments
--  Admin Dashboard for reporting
--  Analytics for spending and deposits
+-  Scheduled/Recurring Payments Mode
+-  Admin Dashboard for reports and provide statistics
+-  Analytics for spending and deposits per user
 
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **Tushar Kant Sahu**  
-[GitHub](https://github.com/tush1504) | [LinkedIn](https://www.linkedin.com/in/tushar-kant-sahu-/)
+[GitHub](https://github.com/tush1504) || [LinkedIn](https://www.linkedin.com/in/tushar-kant-sahu-/)
 
 ---
 
-## 📜 License
+## License
 
-This project is licensed under the MIT License.
+MIT License — free to use, build upon, and learn from. Just give credit where it’s due.
